@@ -9,6 +9,8 @@ RUN npm install
 
 COPY . .
 
+COPY config/filebase/nolbir-io-4464-58b8d-firebase-adminsdk-fbsvc-9306551fc8.json ./config/filebase/
+
 # ❗ bu yerda nest topiladi (chunki endi o‘rnatilgan)
 RUN npm run build
 

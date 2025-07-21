@@ -241,6 +241,8 @@ export class BotService {
   }
 
   async sendMessage(data:MessageType) {
+    console.log(data);
+    
     try {          
         if (data.message) {
           const sent = await this.bot.api.sendMessage(data.userId!, data.message);
