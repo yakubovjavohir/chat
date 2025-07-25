@@ -245,17 +245,28 @@ export class BotService {
     });
   }
 
-  async editMessage(data:MessageType){
+  async editMessage(data: MessageType) {
     try {
-      const messageId = data.messageId
-      const userId = data.userId as number
+      const messageId = data.messageId;
+      const userId = data.userId as number;
+  
       await this.filebaseService.updateMessage(data);
-      await this.bot.api.editMessageCaption(userId, messageId, {caption : data.message});
-      return 'success'
+  
+      // To‘g‘ri tipni tekshir
+      if (data.link.type === 'voice' || data.link.type === 'img' || data.link.type === 'file') {
+        await this.bot.api.editMessageCaption(userId, messageId, {
+          caption: data.message,
+        });
+      } else {
+        await this.bot.api.editMessageText(userId, messageId, data.message);
+      }
+  
+      return 'success';
     } catch (error) {
-      throw new Error('error editMessage : ', error)
+      throw new Error('error editMessage: ' + error.message);
     }
   }
+  
 
   async sendMessage(data:MessageType) {
     try {          
@@ -289,7 +300,6 @@ export class BotService {
   async deleteMessage(messageId: number, data: MessageType) {
     try {
       const chatId = data.userId as number;
-  
       await this.filebaseService.deleteMessage(messageId, chatId);
       await this.bot.api.deleteMessage(chatId, messageId);
       return 'success'

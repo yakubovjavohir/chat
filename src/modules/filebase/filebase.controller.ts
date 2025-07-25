@@ -1,12 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Post} from '@nestjs/common';
-import { FilebaseService } from './filebase.service';
 import { MessageType } from '../bot/interface/bot.service';
 import { BotService } from '../bot/bot.service';
 
 @Controller('firebase')
 export class FilebaseController {
   constructor(
-    private readonly filebaseService: FilebaseService,
     private readonly botService: BotService
   ) {}
 
@@ -16,4 +14,13 @@ export class FilebaseController {
     return this.botService.sendMessage(data)
   }
 
+  @Delete('/delete-message/:id')
+  deleteMessage(@Param('id') id:number, @Body() data:MessageType){
+    return this.botService.deleteMessage(id, data)
+  }
+
+  @Post('/edit-message')
+  editMessage(@Body() data:MessageType){
+    return this.botService.editMessage(data)
+  }
 }
