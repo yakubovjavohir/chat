@@ -3,7 +3,7 @@ export interface MessageType {
     userId?:number
     message:string,
     messageId:number,
-    link?:{
+    link:{
         url?:string,
         type?:string,
         name?:string

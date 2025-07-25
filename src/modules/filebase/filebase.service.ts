@@ -71,7 +71,7 @@ export class FilebaseService {
         role:data.role,
         message:data.message,
         createAt:data.createAt,
-        url:data.link,
+        link:data.link,
         newMessage:data.newMessage
       });
     } catch (error) {
@@ -88,7 +88,7 @@ export class FilebaseService {
         role:data.role,
         message:data.message,
         createAt:data.createAt,
-        url:data.link,
+        link:data.link,
         newMessage:data.newMessage
       })
     } catch (error) {
