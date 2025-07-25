@@ -247,12 +247,13 @@ export class BotService {
 
   async editMessage(data: MessageType) {
     try {
+      console.log(data);
+      
       const messageId = data.messageId;
       const userId = data.userId as number;
   
       await this.filebaseService.updateMessage(data);
   
-      // To‘g‘ri tipni tekshir
       if (data.link.type === 'voice' || data.link.type === 'img' || data.link.type === 'file') {
         await this.bot.api.editMessageCaption(userId, messageId, {
           caption: data.message,
