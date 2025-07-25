@@ -4,9 +4,9 @@ export interface MessageType {
     message:string,
     messageId:number,
     link?:{
-        url:string,
-        type:string,
-        name:string
+        url?:string,
+        type?:string,
+        name?:string
     }
     createAt:string,
     newMessage:boolean

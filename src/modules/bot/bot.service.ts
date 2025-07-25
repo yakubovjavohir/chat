@@ -264,17 +264,17 @@ export class BotService {
           data.messageId = sent.message_id
         }
 
-        if (data.link && data.link?.type === "file") {
+        if (data.link && data.link?.type === "file" && data.link.url) {
           const sent = await this.bot.api.sendDocument(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
 
-        if (data.link && data.link?.type === "img") {
+        if (data.link && data.link?.type === "img" && data.link.url) {
           const sent = await this.bot.api.sendPhoto(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
 
-        if (data.link && data.link?.type === "voice") {
+        if (data.link && data.link?.type === "voice" && data.link.url) {
           const sent = await this.bot.api.sendVoice(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
