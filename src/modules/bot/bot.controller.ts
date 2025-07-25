@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Delete, Param} from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Patch} from '@nestjs/common';
 import { BotService } from './bot.service';
 import { MessageType } from './interface/bot.service';
 
@@ -11,5 +11,10 @@ export class BotController {
   @Delete('/delete-message/:id')
   deleteMessage(@Param('id') id:number, @Body() data:MessageType){
     return this.botService.deleteMessage(id, data)
+  }
+
+  @Post('/edit-message')
+  editMessage(@Body() data:MessageType){
+    return this.botService.editMessage(data)
   }
 }

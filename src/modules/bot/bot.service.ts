@@ -22,25 +22,20 @@ export class BotService {
       await contex.reply("Assalomu aleykum hurmatli mijoz savolingzi berishdan oldin malumotlaringzni olishmiz kerak! Telefon raqamizni yozing ☎️ namuna : +998991234567")
     })
 
-    // user phone message
     this.bot.on("message:text", async (context) => {
           let phone = context.message.text;
           const userId = context.message.from.id;
           const userName = context.message.from.first_name;
 
-          // Telefon formatlash
           if (phone.length === 9) phone = '+998' + phone;
           if (phone.length === 12) phone = '+' + phone;
 
-          // Firebase dan hozirgi foydalanuvchilarni olish
           const data = await this.filebaseService.findAllUser();
           const res = data || []
 
           
-          // Telefon validatsiya
           if (/^\+998\d{9}$/.test(phone)) {
 
-              // User mavjudligini tekshirish
               const alreadyUser = res.find((user: UserData) => user.userId === userId);
               const alreadyPhone = res.find((user: UserData) => user.phone === phone);
 
@@ -52,7 +47,6 @@ export class BotService {
                 return
               } else {
 
-              // Yangi user qo'shish
                 const newUser:UserData = {
                   userName,
                   userId,
@@ -60,17 +54,14 @@ export class BotService {
                   phone,
                   privateNote: "",
                   service:"telegram_bot",
+                  email:'',
                   createAt: formatDate()
                 };  
-                // res.push(newUser);
                 await this.filebaseService.createUser(newUser);
                 await context.reply("Raqamingiz qabul qilindi! Endi savolingizni yuboring 😊");
                 return
               }
           }
-
-          // royxatdan otishdan keyingi message uchun
-          
 
           const isExist = res.find((el: UserData) => el.userId === userId);
           
@@ -82,7 +73,6 @@ export class BotService {
 
           
 
-          // Keyingi xabarni saqlash
           const text = context.message.text;
           const foundUser = res.find((user: UserData) => user.userId === userId);
           if (foundUser) {
@@ -90,13 +80,16 @@ export class BotService {
               role:"bot",
               userId: context.message.from.id as number,
               message: text,
-              url:[],
+              link:{
+                url:'',
+                type:'',
+                name:''
+              },
               messageId: context.message.message_id,
               createAt: formatDate(),
               newMessage:true
             }
 
-            // Yangilangan users arrayni yozib qo'yish
             await this.filebaseService.createMessage(data);
             return
           }
@@ -127,7 +120,11 @@ export class BotService {
         role:"bot",
         messageId:ctx.message.message_id,
         message: message,
-        url: [firebaseUrl, 'file'],
+        link: {
+          url:firebaseUrl,
+          type:'file',
+          name:''
+        },
         createAt: formatDate(),
         newMessage: true
       }
@@ -158,7 +155,11 @@ export class BotService {
         role:"bot",
         messageId:ctx.message.message_id,
         message: "",
-        url: [firebaseUrl, 'voice'],
+        link: {
+          url:firebaseUrl,
+          type:'voice',
+          name:''
+        },
         createAt: formatDate(),
         newMessage: true
       }
@@ -168,7 +169,9 @@ export class BotService {
 
 
     this.bot.on("message:photo", async (ctx) => {
+      
       const photo = ctx.message.photo;
+      console.log(photo);
       
       const fileId = photo[photo.length - 1].file_id;
       
@@ -194,7 +197,11 @@ export class BotService {
         role:"bot",
         messageId: ctx.message.message_id,
         message,
-        url: [firebaseUrl, 'img'],
+        link: {
+          url:firebaseUrl,
+          type:'img',
+          name:''
+        },
         createAt: formatDate(),
         newMessage: true,
       }
@@ -227,7 +234,7 @@ export class BotService {
             role:"bot",
             messageId: messageId,
             message:newText,
-            url: element.url,
+            link: element.link,
             createAt: element.createAt,
             newMessage:element.newMessage
           }
@@ -235,9 +242,19 @@ export class BotService {
           return 
         }
       }
-
-
     });
+  }
+
+  async editMessage(data:MessageType){
+    try {
+      const messageId = data.messageId
+      const userId = data.userId as number
+      await this.filebaseService.updateMessage(data);
+      await this.bot.api.editMessageCaption(userId, messageId, {caption : data.message});
+      return 'success'
+    } catch (error) {
+      throw new Error('error editMessage : ', error)
+    }
   }
 
   async sendMessage(data:MessageType) {
@@ -247,40 +264,36 @@ export class BotService {
           data.messageId = sent.message_id
         }
 
-        if (data.url?.[0] && data.url?.[1] === "file") {
-          const sent = await this.bot.api.sendDocument(data.userId!, data.url[0]);
+        if (data.link && data.link?.type === "file") {
+          const sent = await this.bot.api.sendDocument(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
 
-        if (data.url?.[0] && data.url?.[1] === "img") {
-          const sent = await this.bot.api.sendPhoto(data.userId!, data.url[0]);
+        if (data.link && data.link?.type === "img") {
+          const sent = await this.bot.api.sendPhoto(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
 
-        if (data.url?.[0] && data.url?.[1] === "voice") {
-          const sent = await this.bot.api.sendVoice(data.userId!, data.url[0]);
+        if (data.link && data.link?.type === "voice") {
+          const sent = await this.bot.api.sendVoice(data.userId!, data.link.url);
           data.messageId = sent.message_id
         }
         data.newMessage = false
         await this.filebaseService.createMessage(data)
         return
     } catch (error) {
-      throw new Error('error sendMessage: ' + error);
+      throw new Error('error sendMessage : ' + error);
     }
   }
 
   async deleteMessage(messageId: number, data: MessageType) {
     try {
-      console.log(messageId, data);
       const chatId = data.userId as number;
   
       await this.filebaseService.deleteMessage(messageId, chatId);
-      const result = await this.bot.api.deleteMessage(chatId, messageId);
-      console.log(result);
-      
-      return { success: true };
+      await this.bot.api.deleteMessage(chatId, messageId);
+      return 'success'
     } catch (error) {
-      console.error("O‘chirishda xatolik:", error);
       throw new Error("O‘chirib bo‘lmadi");
     }
   }

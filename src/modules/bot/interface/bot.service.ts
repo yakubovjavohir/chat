@@ -3,7 +3,11 @@ export interface MessageType {
     userId?:number
     message:string,
     messageId:number,
-    url?:[string?, string?]
+    link?:{
+        url:string,
+        type:string,
+        name:string
+    }
     createAt:string,
     newMessage:boolean
 }
@@ -14,6 +18,7 @@ export interface UserData {
     userName:string,
     phone:string,
     privateNote?:string,
-    service:'telegram_bot'
+    service:'telegram_bot',
+    email:string,
     createAt:string
 }
