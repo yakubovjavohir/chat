@@ -245,28 +245,27 @@ export class BotService {
     });
   }
 
-  async editMessage(data: MessageType) {
-    try {
-      console.log(data);
-      
-      const messageId = data.messageId;
-      const userId = data.userId as number;
-  
-      await this.filebaseService.updateMessage(data);
-  
-      if (data.link.type === 'voice' || data.link.type === 'img' || data.link.type === 'file') {
-        await this.bot.api.editMessageCaption(userId, messageId, {
-          caption: data.message,
-        });
-      } else {
-        await this.bot.api.editMessageText(userId, messageId, data.message);
+    async editMessage(data: MessageType) {
+      try {
+        const messageId = data.messageId as number;
+        const userId = data.userId as number;
+        const oldMessage = await this.filebaseService.findOneMessage(userId, messageId)
+        if(oldMessage?.message  === data.message){
+          return  
+        }      
+        await this.filebaseService.updateMessage(data);
+        if (data.link.type === 'voice' || data.link.type === 'img' || data.link.type === 'file') {
+          await this.bot.api.editMessageCaption(userId, messageId, {
+            caption: data.message,
+          });
+        }
+          await this.bot.api.editMessageText(userId, messageId, data.message); 
+    
+        return 'success';
+      } catch (error) {
+        throw new Error('error editMessage: ' + error.message);
       }
-  
-      return 'success';
-    } catch (error) {
-      throw new Error('error editMessage: ' + error.message);
     }
-  }
   
 
   async sendMessage(data:MessageType) {

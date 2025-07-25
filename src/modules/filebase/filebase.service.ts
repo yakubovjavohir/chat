@@ -78,6 +78,14 @@ export class FilebaseService {
     }
   }
 
+  async findOneMessage(userId:number, messageId:number){
+    try {
+      return (await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).get()).data()
+    } catch (error) {
+      throw new Error('error firebase findOneMessagec: '+ error)
+    }
+  }
+
   async updateMessage(data:MessageType){
     try {
       const userId = data.userId
@@ -87,7 +95,8 @@ export class FilebaseService {
         message:data.message,
         createAt:data.createAt,
         link:data.link,
-        newMessage:data.newMessage
+        newMessage:data.newMessage,
+        editMessage:'edit_message'
       })
     } catch (error) {
       throw new Error('error firebase update function : ', error)
