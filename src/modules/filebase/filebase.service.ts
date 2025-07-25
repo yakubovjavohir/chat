@@ -67,7 +67,6 @@ export class FilebaseService {
     try {
       const userId = data.userId;
       await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${data.messageId}`).set({
-        userId:data.userId || null,
         role:data.role,
         message:data.message,
         createAt:data.createAt,
@@ -84,7 +83,6 @@ export class FilebaseService {
       const userId = data.userId
       const messageId = data.messageId
       await this.db.collection("messages").doc(`${userId}`).collection('allMessages').doc(`${messageId}`).update({
-        userId:data.userId,
         role:data.role,
         message:data.message,
         createAt:data.createAt,
