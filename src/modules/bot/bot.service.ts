@@ -259,9 +259,12 @@ export class BotService {
             caption: data.message,
           });
         }
-          await this.bot.api.editMessageText(userId, messageId, data.message); 
+        await this.bot.api.editMessageText(userId, messageId, data.message); 
     
-        return 'success';
+        return {
+          message:"success",
+          data
+        };
       } catch (error) {
         throw new Error('error editMessage: ' + error.message);
       }
@@ -291,7 +294,10 @@ export class BotService {
         }
         data.newMessage = false
         await this.filebaseService.createMessage(data)
-        return
+        return {
+          message:"success",
+          data
+        }
     } catch (error) {
       throw new Error('error sendMessage : ' + error);
     }
@@ -302,7 +308,9 @@ export class BotService {
       const chatId = data.userId as number;
       await this.filebaseService.deleteMessage(messageId, chatId);
       await this.bot.api.deleteMessage(chatId, messageId);
-      return 'success'
+      return {
+        message:"success"
+      }
     } catch (error) {
       throw new Error("O‘chirib bo‘lmadi");
     }
