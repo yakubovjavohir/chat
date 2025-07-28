@@ -4,7 +4,7 @@ import { MessageType, UserData } from './interface/bot.service';
 import { FilebaseService } from '../filebase/filebase.service';
 import path from 'path';
 import { formatDate } from 'src/lib/formatDate';
-
+var userProfilePhotoUrl = ''
 @Injectable()
 export class BotService {
   private bot : Bot
@@ -19,6 +19,19 @@ export class BotService {
 
 
     this.bot.command("start", async (contex)=>{
+      const userId = contex.message?.from.id as number
+      const userPhotos = await contex.api.getUserProfilePhotos(userId);
+      if (userPhotos.total_count === 0) {
+        userProfilePhotoUrl = ""
+      } else {
+        const fileId = userPhotos.photos[0][0].file_id; 
+        const file = await contex.api.getFile(fileId);
+        const botToken = process.env.BOT_TOKEN;
+        const url = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
+        const fileName = `bot_${userId}_${Date.now()}.profile_img`;
+    
+        userProfilePhotoUrl = await this.filebaseService.uploadTelegramFileToFirebase(url, fileName);
+      }
       await contex.reply("Assalomu aleykum hurmatli mijoz savolingzi berishdan oldin malumotlaringzni olishmiz kerak! Telefon raqamizni yozing ☎️ namuna : +998991234567")
     })
 
@@ -55,7 +68,8 @@ export class BotService {
                   privateNote: "",
                   service:"telegram_bot",
                   email:'',
-                  createAt: formatDate()
+                  createAt: formatDate(),
+                  profilePhoto:userProfilePhotoUrl
                 };  
                 await this.filebaseService.createUser(newUser);
                 await context.reply("Raqamingiz qabul qilindi! Endi savolingizni yuboring 😊");
@@ -171,8 +185,6 @@ export class BotService {
     this.bot.on("message:photo", async (ctx) => {
       
       const photo = ctx.message.photo;
-      console.log(photo);
-      
       const fileId = photo[photo.length - 1].file_id;
       
       const userId = ctx.message.from.id

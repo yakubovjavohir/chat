@@ -20,5 +20,6 @@ export interface UserData {
     privateNote?:string,
     service:'telegram_bot',
     email:string,
-    createAt:string
+    createAt:string,
+    profilePhoto:string
 }
