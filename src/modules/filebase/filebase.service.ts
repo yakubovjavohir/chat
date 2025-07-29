@@ -129,7 +129,7 @@ export class FilebaseService {
         updateData
       }
     } catch (error) {
-      throw new Error('error firebase updateUserContact function : ', error)
+      throw new Error('error firebase updateUserContact function : ' + error)
     }
   }
 
