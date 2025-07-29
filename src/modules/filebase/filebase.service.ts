@@ -54,6 +54,14 @@ export class FilebaseService {
     }
   }
 
+  async findOneUser(userId:string | number){
+    try {
+      return (await this.db.collection('users').doc(`${userId}`).get()).data();
+    } catch (error) {
+      throw new Error('error firebase findOneUser functin: ', error)
+    }
+  }
+
   async createUser(data:UserData) {
     try {
       const userId = data.userId;
@@ -70,7 +78,7 @@ export class FilebaseService {
         role:data.role,
         message:data.message,
         createAt:data.createAt,
-        link:data.link,
+        link:data.link == null ? null : data.link,
         newMessage:data.newMessage
       });
     } catch (error) {
@@ -99,7 +107,29 @@ export class FilebaseService {
         editMessage:'edit_message'
       })
     } catch (error) {
-      throw new Error('error firebase update function : ', error)
+      throw new Error('error firebase updateMessage function : ', error)
+    }
+  }
+
+  async updateUserContact(data:UserData, userId:string | number){
+    try {
+      const updateData = await this.db.collection(`users`).doc(`${userId}`).update({
+        email:data.email,
+        phone:data.phone,
+        privateNote:data.privateNote,
+        profilePhoto:data.profilePhoto,
+        role:data.role,
+        service:data.service,
+        userId:data.userId,
+        userName:data.userName,
+        createAt:data.createAt
+      })
+      return {
+        message:"success",
+        updateData
+      }
+    } catch (error) {
+      throw new Error('error firebase updateUserContact function : ', error)
     }
   }
 
@@ -132,4 +162,23 @@ export class FilebaseService {
       throw new Error("error Firebase Storage function :", error);
     }
   }
+
+  async uploadBufferToFirebase(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
+    try {
+      const fileUpload = this.storage.file(fileName);
+      await fileUpload.save(buffer, {
+        metadata: {
+          contentType: contentType,
+        },
+      });
+  
+      await fileUpload.makePublic();
+  
+      const publicUrl = `https://storage.googleapis.com/${this.storage.name}/${fileName}`;
+      return publicUrl;
+    } catch (error) {
+      throw new Error("error Firebase Buffer Upload function :" + error);
+    }
+  }
+  
 }
