@@ -33,8 +33,10 @@ export class FilebaseController {
   //   return this.mailService.sendMail(data)
   // }
 
-  @Patch('/edit-contact')
+  @Patch('/edit-contact:id')
   editContact(@Param('id') id:string | number, @Body() data:UserData){
+    console.log(id, data);
+    
     return this.firebaseService.updateUserContact(data, id)
   }
 }
