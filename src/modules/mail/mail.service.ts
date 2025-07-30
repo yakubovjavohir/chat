@@ -214,10 +214,9 @@ export class MailService {
               const termText = extractUserContent(text);
               const photo = this.extractPhoto(attachments);
               const lastPhoto = getLastPhoto(attachments)
-              console.log(lastPhoto);
               
               let linkData: MessageType['link'] = null;
-              if (lastPhoto?.content?.filename === photo?.filename) {
+              if (lastPhoto?.content?.filename !== photo?.filename ) {
                 console.log(1);
                 
                 linkData = await this.uploadImageAndGetLink(photo);
