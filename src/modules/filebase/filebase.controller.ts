@@ -37,4 +37,9 @@ export class FilebaseController {
   editContact(@Param('id') id:string | number, @Body() data:UserData){
     return this.firebaseService.updateUserContact(data, id)
   }
+
+  @Delete('/delete-contact/:id')
+  deleteContact(@Param('id') id:number | string){
+    return this.firebaseService.deleteUserContact(id)
+  }
 }

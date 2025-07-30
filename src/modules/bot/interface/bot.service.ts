@@ -15,12 +15,12 @@ export interface MessageType {
 }
 
 export interface UserData {
-    role:'bot' | 'admin' | 'mail',
+    role:'bot' | 'admin' | 'email',
     userId:number | string,
     userName:string,
     phone:string,
     privateNote?:string,
-    service:'telegram_bot' | 'mail',
+    service:'telegram_bot' | 'gmail',
     email:string,
     createAt:string,
     profilePhoto:string

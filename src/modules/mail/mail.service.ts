@@ -151,12 +151,12 @@ export class MailService {
     const existingUser = await this.firebaseService.findOneUser(userId);
     if (!existingUser) {
       const userData: UserData = {
-        role: 'mail',
+        role: 'email',
         userId,
         userName,
         phone: '',
         privateNote: '',
-        service: 'mail',
+        service: 'gmail',
         email,
         createAt: formatDate(),
         profilePhoto: ''
@@ -237,9 +237,5 @@ export class MailService {
       f.once('error', (err) => console.error('Fetch xato:', err));
     });
   }
-  
-
-
-
   
 }
