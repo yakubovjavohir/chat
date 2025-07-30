@@ -219,7 +219,7 @@ export class MailService {
               
               
               let linkData: MessageType['link'] = null;
-              if (lastPhoto?.content?.partId > photo.pasrtId) {
+              if (lastPhoto?.content?.partId >= photo.pasrtId) {
                 console.log(1);
                 linkData = await this.uploadImageAndGetLink(photo);
               }
