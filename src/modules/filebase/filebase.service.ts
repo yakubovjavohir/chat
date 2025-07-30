@@ -113,7 +113,7 @@ export class FilebaseService {
 
   async updateUserContact(data:UserData, userId:string | number){
     try {
-      const updateData = await (this.db.collection(`users`).doc(`${userId}`).update({
+      await this.db.collection(`users`).doc(`${userId}`).update({
         email:data.email,
         phone:data.phone,
         privateNote:data.privateNote,
@@ -123,10 +123,11 @@ export class FilebaseService {
         userId:data.userId,
         userName:data.userName,
         createAt:data.createAt
-      }))
+      })
+      const updateData = await this.findOneUser(userId)
       return {
         message:"success",
-        data:updateData[0].data()
+        updateData
       }
     } catch (error) {
       throw new Error('error firebase updateUserContact function : ' + error)
