@@ -1,16 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import serviceAccount from '../../config/filebase/nolbir-io-4464-58b8d-firebase-adminsdk-fbsvc-9306551fc8.json';
 import { Bucket } from '@google-cloud/storage';
 import * as fetch from 'node-fetch';
 import { MessageType, UserData } from '../bot/interface/bot.service';
+import { BotService } from '../bot/bot.service';
 
 @Injectable()
 export class FilebaseService {
   private db: FirebaseFirestore.Firestore;
   private storage: Bucket;
 
-  constructor() {
+  constructor(
+    @Inject(forwardRef(() => BotService))
+    private readonly botService: BotService
+  ) {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
@@ -134,11 +138,22 @@ export class FilebaseService {
     }
   }
 
-  async allMessagesDelete(userId:string|number){
+  async allMessagesDelete(userId:string | number){
     try {
-      const messages = await this.findAllMessages()
-      console.log(messages);
-      
+      const user = await this.findOneUser(userId)
+      const messages = (await this.db.collection('messages').doc(`${userId}`).collection('allMessages').get())
+      if (user?.service === 'telegram_bot') {
+        for (let i = 0; i < messages.docs.length; i++) {
+          const messageId = messages.docs[i].id as unknown as number
+          await this.botService.deleteMessage(messageId, userId as unknown as number)
+        }
+        const batch = this.db.batch();
+        messages.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await this.db.collection('messages').doc(`${userId}`).delete();
+      }
     } catch (error) {
       throw new Error('error firebase allMessagesDelete function :' + error)
     }
@@ -146,10 +161,8 @@ export class FilebaseService {
 
   async deleteUserContact(userId:string|number){
     try {
-      console.log(userId);
-      
-      await this.db.collection('users').doc(`${userId}`).delete()
       await this.allMessagesDelete(userId)
+      await this.db.collection('users').doc(`${userId}`).delete()
       return {
         message:"user data and user allMessages deleted.",
       }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Bot } from "grammy";
 import { MessageType, UserData } from './interface/bot.service';
 import { FilebaseService } from '../filebase/filebase.service';
@@ -8,7 +8,10 @@ var userProfilePhotoUrl = ''
 @Injectable()
 export class BotService {
   private bot : Bot
-  constructor(private readonly filebaseService: FilebaseService){
+  constructor(
+    @Inject(forwardRef(() => FilebaseService))
+    private readonly filebaseService: FilebaseService
+  ){
     this.bot = new Bot(process.env.BOT_TOKEN!)
     this.chatBot()
   }
@@ -346,9 +349,9 @@ export class BotService {
     }
   }
 
-  async deleteMessage(messageId: number, data: MessageType) {
+  async deleteMessage(messageId: number, userId: number) {
     try {
-      const chatId = data.userId as number;
+      const chatId = userId;
       await this.filebaseService.deleteMessage(messageId, chatId);
       await this.bot.api.deleteMessage(chatId, messageId);
       return {
@@ -358,9 +361,4 @@ export class BotService {
       throw new Error("O‘chirib bo‘lmadi");
     }
   }
-
-
-
-  
-  
 }

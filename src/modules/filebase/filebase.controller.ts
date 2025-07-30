@@ -18,9 +18,9 @@ export class FilebaseController {
     return this.botService.sendMessage(data)
   }
 
-  @Delete('/delete-message/:id')
-  deleteMessage(@Param('id') id:number, @Body() data:MessageType){
-    return this.botService.deleteMessage(id, data)
+  @Post('/delete-message')
+  deleteMessage(@Body() {messageId, userId}){
+    return this.botService.deleteMessage(messageId, userId)
   }
 
   @Post('/edit-message')
@@ -39,7 +39,7 @@ export class FilebaseController {
   }
 
   @Delete('/delete-contact/:id')
-  deleteContact(@Param('id') id:number | string){
-    return this.firebaseService.deleteUserContact(id)
+  deleteContact(@Param('id') userId:number | string){
+    return this.firebaseService.deleteUserContact(userId)
   }
 }
