@@ -136,9 +136,9 @@ export class FilebaseService {
 
   async allMessagesDelete(userId:string|number){
     try {
-      console.log(userId);
+      const messages = await this.findAllMessages()
+      console.log(messages);
       
-      await this.db.collection('messages').doc(`${userId}`).delete()
     } catch (error) {
       throw new Error('error firebase allMessagesDelete function :' + error)
     }
