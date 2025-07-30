@@ -26,6 +26,9 @@ export class FilebaseService {
     this.storage = admin.storage().bucket();
   }
 
+
+
+
   async findAllUser() {
     try {
       const snapshot = (await this.db.collection('users').get());
@@ -39,6 +42,10 @@ export class FilebaseService {
       throw new Error('error firebase findAllUser function : ' + error);
     }
   }
+
+
+
+
 
   async findAllMessages() {
     try {
@@ -58,6 +65,10 @@ export class FilebaseService {
     }
   }
 
+
+
+
+
   async findOneUser(userId:string | number){
     try {
       return (await this.db.collection('users').doc(`${userId}`).get()).data();
@@ -65,6 +76,10 @@ export class FilebaseService {
       throw new Error('error firebase findOneUser functin: ', error)
     }
   }
+
+
+
+
 
   async createUser(data:UserData) {
     try {
@@ -74,6 +89,10 @@ export class FilebaseService {
       throw new Error('error firebase createUser function : ' + error);
     }
   }
+
+
+
+
 
   async createMessage(data:MessageType) {
     try {
@@ -90,6 +109,10 @@ export class FilebaseService {
     }
   }
 
+
+
+
+
   async findOneMessage(userId:number, messageId:number){
     try {
       return (await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).get()).data()
@@ -97,6 +120,11 @@ export class FilebaseService {
       throw new Error('error firebase findOneMessagec: '+ error)
     }
   }
+
+
+
+
+
 
   async updateMessage(data:MessageType){
     try {
@@ -114,6 +142,11 @@ export class FilebaseService {
       throw new Error('error firebase updateMessage function : ', error)
     }
   }
+
+
+
+
+
 
   async updateUserContact(data:UserData, userId:string | number){
     try {
@@ -138,6 +171,11 @@ export class FilebaseService {
     }
   }
 
+
+
+
+
+
   async allMessagesDelete(userId:string | number){
     try {
       const user = await this.findOneUser(userId)
@@ -159,6 +197,12 @@ export class FilebaseService {
     }
   }
 
+
+
+
+
+
+
   async deleteUserContact(userId:string|number){
     try {
       await this.allMessagesDelete(userId)
@@ -171,13 +215,32 @@ export class FilebaseService {
     }
   }
 
-  async deleteMessage(messageId:number, userId:number){
+
+
+
+
+
+
+  async deleteMessage(messageId:number | string, userId:number | string){
     try {
-      await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).delete()
+      const user = await this.findOneUser(userId)
+      if(user?.role === 'bot'){
+        await this.botService.deleteMessage(messageId as number, userId as number)
+        await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).delete()
+      }
+      return {
+        message:"deleted message"
+      }
     } catch (error) {
       throw new Error('error firebase deleteMessage function : ', error)
     }
   }
+
+
+
+
+
+
 
   async uploadTelegramFileToFirebase(fileUrl: string, fileName: string): Promise<string> {
     try {
@@ -201,6 +264,13 @@ export class FilebaseService {
     }
   }
 
+
+
+
+
+
+
+  
   async uploadBufferToFirebase(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
     try {
       const fileUpload = this.storage.file(fileName);

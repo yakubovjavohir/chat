@@ -18,9 +18,9 @@ export class FilebaseController {
     return this.botService.sendMessage(data)
   }
 
-  @Post('/delete-message')
-  deleteMessage(@Body() {messageId, userId}){
-    return this.botService.deleteMessage(messageId, userId)
+  @Delete('/delete-message/:id')
+  deleteMessage(@Param('id') messageId: string | number, @Body() {userId}){
+    return this.firebaseService.deleteMessage(messageId, userId)
   }
 
   @Post('/edit-message')
