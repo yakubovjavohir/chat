@@ -216,7 +216,7 @@ export class MailService {
               const lastPhoto = getLastPhoto(attachments)
               
               let linkData: MessageType['link'] = null;
-              if (lastPhoto?.content?.filename === photo?.filename && photo) {
+              if (lastPhoto?.content?.filename === photo?.filename) {
                 linkData = await this.uploadImageAndGetLink(photo);
               }
   
