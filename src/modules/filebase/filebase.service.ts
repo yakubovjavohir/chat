@@ -134,10 +134,18 @@ export class FilebaseService {
     }
   }
 
+  async allMessagesDelete(userId:string|number){
+    try {
+      await this.db.collection('messages').doc(`${userId}`).delete()
+    } catch (error) {
+      throw new Error('error firebase allMessagesDelete function :' + error)
+    }
+  }
+
   async deleteUserContact(userId:string|number){
     try {
       await this.db.collection('users').doc(`${userId}`).delete()
-      await this.db.collection('messages').doc(`${userId}`).delete()
+      await this.allMessagesDelete(userId)
       return {
         message:"user data and user allMessages deleted.",
       }
