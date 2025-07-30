@@ -137,9 +137,9 @@ export class FilebaseService {
   async deleteUserContact(userId:string|number){
     try {
       await this.db.collection('users').doc(`${userId}`).delete()
+      await this.db.collection('messages').doc(`${userId}`).delete()
       return {
-        message:"success",
-        user:"delete"
+        message:"user data and user allMessages deleted.",
       }
     } catch (error) {
       throw new Error('error firebase deleteUserContact function : ' + error)
