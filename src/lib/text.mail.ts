@@ -1,6 +1,6 @@
 export function extractUserContent(rawText: string): { text: string; images: string[] } {
   if (!rawText) return { text: '', images: [] };
-
+  
   const images: string[] = [];
 
   // 1. [image: filename] dan rasm nomlarini yig'ib olish

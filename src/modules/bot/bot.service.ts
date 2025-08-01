@@ -1,9 +1,11 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Bot } from "grammy";
-import { MessageType, UserData } from './interface/bot.service';
+import { MessageType } from '../../config/types/message';
+import { UserData } from '../../config/types/user';
 import { FilebaseService } from '../filebase/filebase.service';
 import path from 'path';
 import { formatDate } from 'src/lib/formatDate';
+import { v4 } from 'uuid';
 var userProfilePhotoUrl = ''
 @Injectable()
 export class BotService {
@@ -64,6 +66,7 @@ export class BotService {
               } else {
 
                 const newUser:UserData = {
+                  id:v4(),
                   userName,
                   userId,
                   role:"bot",
@@ -74,6 +77,8 @@ export class BotService {
                   createAt: formatDate(),
                   profilePhoto:userProfilePhotoUrl
                 };  
+                console.log(newUser);
+                
                 await this.filebaseService.createUser(newUser);
                 await context.reply("Raqamingiz qabul qilindi! Endi savolingizni yuboring 😊");
                 return

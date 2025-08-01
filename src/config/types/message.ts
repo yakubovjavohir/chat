@@ -7,21 +7,9 @@ export interface MessageType {
     link?:{
         url?:string,
         type?:string,
-        name?:string,
+        name?:string | undefined,
         size?:string
     } | null
     createAt:string,
     newMessage:boolean
-}
-
-export interface UserData {
-    role:'bot' | 'admin' | 'email',
-    userId:number | string,
-    userName:string,
-    phone:string,
-    privateNote?:string,
-    service:'telegram_bot' | 'gmail',
-    email:string,
-    createAt:string,
-    profilePhoto:string
 }

@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Param, Patch, Post} from '@nestjs/common';
-import { MessageType, UserData } from '../bot/interface/bot.service';
+import { MessageType } from '../../config/types/message';
+import { UserData } from '../../config/types/user';
 import { BotService } from '../bot/bot.service';
 import { MailService } from '../mail/mail.service';
 import { FilebaseService } from './filebase.service';
@@ -13,7 +14,7 @@ export class FilebaseController {
   ) {}
 
 
-  @Post('/send-message')
+  @Post('/send-message/bot')
   sendMessage(@Body() data:MessageType){
     return this.botService.sendMessage(data)
   }
@@ -28,10 +29,10 @@ export class FilebaseController {
     return this.botService.editMessage(data)
   }
 
-  // @Post('/send-message/mail')
-  // sendMessageMail(@Body() data:any){
-  //   return this.mailService.sendMail(data)
-  // }
+  @Post('/send-message/mail')
+  sendMessageMail(@Body() {userId, to, subject, text, attachments, role}:any){
+    return this.mailService.sendEmail(userId, to, subject, text, attachments, role)
+  }
 
   @Patch('/edit-contact/:id')
   editContact(@Param('id') id:string | number, @Body() data:UserData){
