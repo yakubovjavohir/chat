@@ -1,12 +1,12 @@
 export interface UserData {
-    id:string
+    id?:string
     role:'bot' | 'admin' | 'email',
-    userId:number | string,
+    userId?:number | string,
     userName:string,
     phone:string,
     privateNote?:string,
     service:'telegram_bot' | 'gmail',
-    email:string,
+    email?:string,
     createAt:string,
-    profilePhoto:string
+    profilePhoto?:string
 }

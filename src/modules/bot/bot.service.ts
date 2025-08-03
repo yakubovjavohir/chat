@@ -71,7 +71,6 @@ export class BotService {
               } else {
 
                 const newUser:UserData = {
-                  id:v4(),
                   userName,
                   userId,
                   role:"bot",
