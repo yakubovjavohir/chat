@@ -1,9 +1,9 @@
 export interface MessageType {
+    id?:string
     role:string,
     userId?:number | string
     message:string,
     messageId:number | string,
-    replyId?:number | string,
     link?:{
         url?:string,
         type?:string,
@@ -11,5 +11,8 @@ export interface MessageType {
         size?:string
     } | null
     createAt:string,
-    newMessage:boolean
+    newMessage:boolean,
+    subject:string | null,
+    inReplyId?:string | number | null,
 }
+

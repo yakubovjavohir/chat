@@ -9,7 +9,7 @@ import crypto from 'crypto';
 import { formatDate } from 'src/lib/formatDate';
 import * as nodemailer from 'nodemailer';
 import { v4 } from 'uuid';
-
+import axios from 'axios';
 
 
 
@@ -152,17 +152,33 @@ export class MailService {
 
 
 
+  private getFileType(filename: string): 'img' | 'pdf' | 'doc' | 'file' | 'md'{
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (!ext) return 'file';
+  
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'img';
+    if (['pdf'].includes(ext)) return 'pdf';
+    if (['md'].includes(ext)) return 'md';
+    if (['doc', 'docx'].includes(ext)) return 'doc';
+    return 'file';
+  }
 
-  private async uploadImageAndGetLink(photo: any, userId:string) {
+
+
+
+
+
+
+  private async uploadImageAndGetLink(photo: any, userId:string | number) {
     const attachment = {
       content: photo.content,
       filename: photo.name || `image_${Date.now()}.png`,
       contentType: photo.mimeType || 'image/png',
     };
-  
+
     const imageUrl = await this.firebaseService.uploadBufferToFirebase(
       attachment.content,
-      `email_${userId}_${Date.now()}_img`,
+      `email_${userId}_${Date.now()}_${this.getFileType(photo.name)}`,
       attachment.contentType
     );
   
@@ -172,7 +188,7 @@ export class MailService {
   
     return {
       url: imageUrl,
-      type: 'img',
+      type: attachment.contentType,
       name: photo.name,
       size
     };
@@ -182,16 +198,16 @@ export class MailService {
 
 
 
-  private async uploadFileAndGetLink(file: any, userId:string) {
+  private async uploadFileAndGetLink(file: any, userId:string | number) {
     const attachment = {
       content: file.content,
       filename: file.name || `file_${Date.now()}`,
       contentType: file.mime || 'application/octet-stream',
     };
-
+    
     const fileUrl = await this.firebaseService.uploadBufferToFirebase(
       attachment.content,
-      `email_${userId}_${Date.now()}_file`,
+      `email_${userId}_${Date.now()}_${this.getFileType(file.name)}`,
       attachment.contentType
     );
 
@@ -201,7 +217,7 @@ export class MailService {
 
     return {
       url: fileUrl,
-      type: 'file',
+      type: attachment.contentType,
       name: file.name,
       size
     };
@@ -212,8 +228,8 @@ export class MailService {
 
 
 
-  private async saveUserIfNotExists(userId: string, userName: string, email: string) {
-    const existingUser = await this.firebaseService.findOneUser(userId);
+  private async saveUserIfNotExists(id: string, userName: string, email: string, userId:string | number) {
+    const existingUser = await this.firebaseService.findOneUser(id);
     if (!existingUser) {
       const userData: UserData = {
         id:v4(),
@@ -236,32 +252,9 @@ export class MailService {
 
 
 
-  private getFileType(filename: string): 'img' | 'pdf' | 'doc' | 'file' {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    if (!ext) return 'file';
-  
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'img';
-    if (['pdf'].includes(ext)) return 'pdf';
-    if (['doc', 'docx'].includes(ext)) return 'doc';
-    return 'file';
-  }
-
-
 
   
-  private getFileSizeReadable(bytes: number): string {
-    if (bytes === 0) return '0 kb';
-    const kb = bytes / 1024;
-    return `${kb.toFixed(1)} kb`;
-  }
-  
-
-
-
-
-
-  
-  private async saveMessage(userId: string, termText: string, linkData: MessageType['link'], messageId: string, role: string = 'admin') {
+  private async saveMessage(userId: string | number, termText: string, linkData: MessageType['link'], messageId: string, role: string) {
     const messageData: MessageType = {
       role: role,
       userId,
@@ -269,10 +262,10 @@ export class MailService {
       messageId,
       link: linkData,
       createAt: formatDate(),
-      newMessage: true
+      newMessage: true,
+      subject: ''
     };
   
-    console.log(messageData);
     await this.firebaseService.createMessage(messageData);
     console.log('✅ Message created');
   }
@@ -281,37 +274,68 @@ export class MailService {
 
 
 
-  async sendEmail(userId: string, to: string, subject: string, text: string, attachments?: any[], role: string = 'admin') {
+
+  private async replyMessage(userId: string | number, subject:any, termText: string, linkData: MessageType['link'], messageId: string, role: string, inReplyId: string | number){
+    const messageData: MessageType = {
+      role: role,
+      userId,
+      message: termText,
+      messageId,
+      link: linkData,
+      createAt: formatDate(),
+      newMessage: true,
+      subject,
+      inReplyId
+    };
+
+    await this.firebaseService.createMessage(messageData)
+  }
+
+
+
+
+
+  async sendEmail(userId: string | number, email: string, subject: string | null, message: string, link: any[], role: string) {
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // yoki boshqa xizmat
+      service: 'gmail', 
       auth: {
-        user: process.env.CHAT_MAIL, // sizning bot emailingiz
-        pass: process.env.EMAIL_APP_PASSWORD, // app-password yoki actual password
+        user: process.env.CHAT_MAIL, 
+        pass: process.env.EMAIL_APP_PASSWORD, 
       },
     });
+    const response = await axios.get(
+      'https://storage.googleapis.com/nolbir-io-4464-58b8d.firebasestorage.app/bot_5843145098_1754032535387.img',
+      { responseType: 'arraybuffer' }
+    );
+    const linkData = [
+      {
+        filename:link[0]?.name,
+        content: Buffer.from(response.data) ,
+      }
+    ]
 
     const mailOptions = {
       from: process.env.MAIL_USER,
-      to,
-      subject:subject || '',
-      text:text || '',
-      attachments: attachments || [],
+      to:email,
+      subject,
+      text:message || '',
+      attachments: linkData || [],
     };
 
-    let linkData: MessageType['link'] = null;
+    let processedLinkData: MessageType['link'] = null;
 
-    if (attachments?.length) {
-      const attachment = attachments[0]; // faqat birinchi faylni olayapmiz
-      linkData = {
-        url: attachment.path, // yoki `attachment.href` bo‘lishi mumkin, qayerdan kelganiga qarab
-        type: this.getFileType(attachment.filename), // masalan: 'img', 'pdf', 'doc'
-        name: attachment.filename,
-        size: this.getFileSizeReadable(attachment.content?.length || 0), // optional
+    if (link[0].url) {
+      const attachment = link[0]; 
+      processedLinkData = {
+        url: attachment?.url, 
+        type: attachment?.type, 
+        name: attachment?.name,
+        size: attachment?.size,
       };
     }
 
     const sendData = await transporter.sendMail(mailOptions);
-    const data = await this.saveMessage(userId, text, linkData, sendData.messageId, role);
+    const data = await this.saveMessage(userId, message, processedLinkData, sendData.messageId, role);
     return data;
   }
 
@@ -339,8 +363,8 @@ export class MailService {
             try {
             const fullBuffer = Buffer.concat(buffer)
             const parsed: any = await this.parseEmail(fullBuffer);
-            const { from, text, attachments, messageId } = parsed;
-
+            const { from, text, attachments, messageId, inReplyTo, references, subject } = parsed;
+              
             const email = from?.value?.[0]?.address || '';
             const userId = crypto.createHash('md5').update(email).digest('hex');
             const userName = from?.value?.[0]?.name || email;
@@ -353,10 +377,20 @@ export class MailService {
             const hasFile = !!file;
 
             const hasText = !!termText.text?.trim()
+            
+            
 
-            await this.saveUserIfNotExists(userId, userName, email);
+            await this.saveUserIfNotExists(v4(), userName, email, userId);
 
             let linkData: MessageType['link'] = null;
+
+            if(inReplyTo){
+              await this.replyMessage(userId, subject, hasText ? termText.text : '', linkData, messageId, 'email', inReplyTo)
+              console.log('success reply message');
+              
+              return
+            }
+            
 
             if (hasFile) {
               const fileLinkData = await this.uploadFileAndGetLink(file, userId);
@@ -369,7 +403,7 @@ export class MailService {
             }
             
             if (hasPhoto || hasText) {
-              await this.saveUserIfNotExists(userId, userName, email);
+              await this.saveUserIfNotExists(v4(), userName, email, userId);
               await this.saveMessage(userId, hasText ? termText.text : '', linkData, messageId, 'email');
               return
             }

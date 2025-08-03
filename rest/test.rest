@@ -1,0 +1,19 @@
+POST http://localhost:3000/firebase/send-message
+Content-Type: application/json
+
+{
+	"role":"admin",
+	"message":"assalomu alaykum",
+	"messageId":0,
+    "id":"78cbc4aa-490c-4740-8782-652fa0fc9795",
+	"link":{
+		"url":"https://storage.googleapis.com/nolbir-io-4464-58b8d.firebasestorage.app/bot_7000897409_1754199891833.img",
+		"type":"img",
+		"name":"Example Link",
+		"size":"100KB"
+	},
+	"createAt":"00",
+	"newMessage":true,
+	"subject":null,
+	"inReplyId":null
+}

@@ -40,6 +40,11 @@ export class BotService {
       await contex.reply("Assalomu aleykum hurmatli mijoz savolingzi berishdan oldin malumotlaringzni olishmiz kerak! Telefon raqamizni yozing ☎️ namuna : +998991234567")
     })
 
+
+
+
+
+
     this.bot.on("message:text", async (context) => {
           let phone = context.message.text;
           const userId = context.message.from.id;
@@ -77,8 +82,6 @@ export class BotService {
                   createAt: formatDate(),
                   profilePhoto:userProfilePhotoUrl
                 };  
-                console.log(newUser);
-                
                 await this.filebaseService.createUser(newUser);
                 await context.reply("Raqamingiz qabul qilindi! Endi savolingizni yuboring 😊");
                 return
@@ -96,20 +99,27 @@ export class BotService {
           const text = context.message.text;
           const foundUser = res.find((user: UserData) => user.userId === userId);
           if (foundUser) {
+            const id = await this.filebaseService.id(userId)
             const data:MessageType = {
+              id,
               role:"bot",
               userId: context.message.from.id as number,
               message: text,
               messageId: context.message.message_id,
               link:null,
               createAt: formatDate(),
-              newMessage:true
+              newMessage:true,
+              subject:null
             }
 
             await this.filebaseService.createMessage(data);
             return
           }
     });
+
+
+
+
 
 
     this.bot.on("message:document", async (ctx) => {  
@@ -127,10 +137,17 @@ export class BotService {
       } else {
         size = `${sizeInMb} mb`
       }
+      const id = await this.filebaseService.id(userId)
+
       const file = await this.bot.api.getFile(fileId);
       const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN!}/${file.file_path}`;
       
-      const fileName = `bot_${userId}_${Date.now()}` + `.${extension}`;
+      const fileName = `bot_${id}_${Date.now()}` + `
+      
+      
+      
+      
+      ${extension}`;
 
       const firebaseUrl = await this.filebaseService.uploadTelegramFileToFirebase(fileUrl, fileName);
       const message = ctx.message.caption || ""
@@ -141,9 +158,8 @@ export class BotService {
 
       const user = existing.find((el: UserData) => el.userId === userId);
       if (!user) return ctx.reply("Suxbatni boshlashdan oldin telefon raqamizni kirtshingz kerak!");
-
       const messageData:MessageType = {
-        userId,
+        id,
         role:"bot",
         messageId:ctx.message.message_id,
         message: message,
@@ -154,11 +170,17 @@ export class BotService {
           size
         },
         createAt: formatDate(),
-        newMessage: true
+        newMessage: true,
+        subject:null
       }
 
       await this.filebaseService.createMessage(messageData);
     });
+
+
+
+
+
 
 
     this.bot.on("message:voice", async (ctx) => {
@@ -175,10 +197,13 @@ export class BotService {
       } else {
         size = `${sizeInMb} mb`
       }
+
+      const id = await this.filebaseService.id(userId)
+
       const file = await this.bot.api.getFile(fileId);
       const voiceUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN!}/${file.file_path}`;
       
-      const fileName = `bot_${userId}_${Date.now()}` + `.${ext}`;
+      const fileName = `bot_${id}_${Date.now()}` + `.${ext}`;
 
       const firebaseUrl = await this.filebaseService.uploadTelegramFileToFirebase(voiceUrl, fileName);
 
@@ -187,9 +212,8 @@ export class BotService {
 
       const user = existing.find((el: UserData) => el.userId === userId);
       if (!user) return ctx.reply("Suxbatni boshlashdan oldin telefon raqamizni kirtshingz kerak!");
-
       const messageData:MessageType = {
-        userId,
+        id,
         role:"bot",
         messageId:ctx.message.message_id,
         message: "",
@@ -200,15 +224,21 @@ export class BotService {
           size
         },
         createAt: formatDate(),
-        newMessage: true
+        newMessage: true,
+        subject:null
       }
 
       await this.filebaseService.createMessage(messageData);
     });
 
 
+
+
+
+
+
+
     this.bot.on("message:photo", async (ctx) => {
-      
       const photo = ctx.message.photo;
       const fileId = photo[photo.length - 1].file_id;
 
@@ -226,9 +256,12 @@ export class BotService {
       const userId = ctx.message.from.id
 
       const file = await this.bot.api.getFile(fileId);
+      
+      const id = await this.filebaseService.id(userId)
+
       const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
     
-      const fileName = `bot_${userId}_${Date.now()}.img`;
+      const fileName = `bot_${id}_${Date.now()}.img`;
     
       const firebaseUrl = await this.filebaseService.uploadTelegramFileToFirebase(fileUrl, fileName);
     
@@ -239,9 +272,8 @@ export class BotService {
       const user = existing.find((el: UserData) => el.userId === userId);
     
       if (!user) return ctx.reply("Suxbatni boshlashdan oldin telefon raqamingizni kiriting!");
-    
       const messageData:MessageType = {
-        userId,
+        id,
         role:"bot",
         messageId: ctx.message.message_id,
         message,
@@ -253,10 +285,17 @@ export class BotService {
         },
         createAt: formatDate(),
         newMessage: true,
+        subject:null
       }
     
       await this.filebaseService.createMessage(messageData);
     });
+
+
+
+
+
+
 
 
     this.bot.on("edited_message:text", async (ctx) => {
@@ -278,14 +317,16 @@ export class BotService {
       for (let i = 0; i < allMessages.length; i++) {
         const element = allMessages[i];
         if(element.message_id == messageId){
+          const id = await this.filebaseService.id(userId)
           const messageData:MessageType = {
-            userId,
+            id,
             role:"bot",
             messageId: messageId,
             message:newText,
             link: element.link || null,
             createAt: element.createAt,
-            newMessage:element.newMessage
+            newMessage:element.newMessage,
+            subject:element.subject
           }
           await this.filebaseService.updateMessage(messageData);
           return 
@@ -294,11 +335,18 @@ export class BotService {
     });
   }
 
-    async editMessage(data: MessageType) {
+
+
+
+
+
+
+
+    async editMessage(messageId:number, data: MessageType) {
       try {
-        const messageId = data.messageId as number;
-        const userId = data.userId as number;
-        const oldMessage = await this.filebaseService.findOneMessage(userId, messageId)
+        const id = data.id as string
+        const userId = data.userId as number
+        const oldMessage = await this.filebaseService.findOneMessage(id, messageId)
         if(oldMessage?.message  === data.message){
           return  
         }      
@@ -320,6 +368,13 @@ export class BotService {
     }
   
 
+
+
+
+
+
+
+    
   async sendMessage(data:MessageType) {
     try {          
         if (data.message) {
@@ -342,7 +397,11 @@ export class BotService {
           data.messageId = sent.message_id
         }
 
-        await this.bot.api.sendMessage(data.userId as number, data.message, {reply_to_message_id:data.replyId as number})
+        if(data.inReplyId){
+          const sent = await this.bot.api.sendMessage(data.userId as number, data.message, {reply_to_message_id:data.inReplyId as number})
+          data.messageId = sent.message_id
+        }
+
         data.newMessage = false
         await this.filebaseService.createMessage(data)
         return {
@@ -354,16 +413,16 @@ export class BotService {
     }
   }
 
-  async deleteMessage(messageId: number, userId: number) {
+  async deleteMessage(messageId: number, userId: number, id: string) {
     try {
       const chatId = userId;
-      await this.filebaseService.deleteMessage(messageId, chatId);
+      await this.filebaseService.deleteMessage(messageId, id, userId);
       await this.bot.api.deleteMessage(chatId, messageId);
       return {
         message:"success"
       }
     } catch (error) {
-      throw new Error("O‘chirib bo‘lmadi");
+      throw new Error("O'chirib bo'lmadi");
     }
   }
 }

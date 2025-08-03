@@ -5,8 +5,8 @@ import { Bucket } from '@google-cloud/storage';
 import * as fetch from 'node-fetch';
 import { MessageType } from '../../config/types/message';
 import { UserData } from '../../config/types/user';
-
 import { BotService } from '../bot/bot.service';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class FilebaseService {
@@ -20,7 +20,7 @@ export class FilebaseService {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-        storageBucket: 'nolbir-io-4464-58b8d.firebasestorage.app',
+        storageBucket: 'gs://nolbir-io-4464-58b8d.firebasestorage.app',
       });
     }
 
@@ -71,9 +71,9 @@ export class FilebaseService {
 
 
 
-  async findOneUser(userId:string | number){
+  async findOneUser(id:string){
     try {
-      return (await this.db.collection('users').doc(`${userId}`).get()).data();
+      return (await this.db.collection('users').doc(`${id}`).get()).data();
     } catch (error) {
       throw new Error('error firebase findOneUser functin: ', error)
     }
@@ -85,8 +85,7 @@ export class FilebaseService {
 
   async createUser(data:UserData) {
     try {
-      const userId = data.userId;
-      await this.db.collection('users').doc(`${userId}`).set(data);
+      await this.db.collection('users').doc(`${v4()}`).set(data);
     } catch (error) {
       throw new Error('error firebase createUser function : ' + error);
     }
@@ -95,11 +94,42 @@ export class FilebaseService {
 
 
 
+  async userId(id:string){
+    try {
+      const data = (await this.db.collection('users').doc(id).get()).data()
+      return data?.userId
+    } catch (error) {
+      throw new Error('error userId function : ' + error)
+    }
+  }
+
+
+
+
+  async id(userId1:string | number){
+    try {
+      const data = (await this.db.collection('users').get()).docs
+      for (let i = 0; i < data.length; i++) {
+        const id = data[i].id;
+        const userId2 = await this.userId(id)
+        if(userId1 === userId2){
+          return id
+        }
+      }
+    } catch (error) {
+      throw new Error('error id function : ' + error)
+    }
+  }
+
+
+
+
+
 
   async createMessage(data:MessageType) {
     try {
-      const userId = data.userId;
-      await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${data.messageId}`).set({
+      const id = data.id;
+      await this.db.collection('messages').doc(`${id}`).collection('allMessages').doc(`${data.messageId}`).set({
         role:data.role,
         message:data.message,
         createAt:data.createAt,
@@ -115,9 +145,9 @@ export class FilebaseService {
 
 
 
-  async findOneMessage(userId:number, messageId:number){
+  async findOneMessage(id:string, messageId:number | string){
     try {
-      return (await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).get()).data()
+      return (await this.db.collection('messages').doc(`${id}`).collection('allMessages').doc(`${messageId}`).get()).data()
     } catch (error) {
       throw new Error('error firebase findOneMessagec: '+ error)
     }
@@ -130,9 +160,9 @@ export class FilebaseService {
 
   async updateMessage(data:MessageType){
     try {
-      const userId = data.userId
+      const id = data.id
       const messageId = data.messageId
-      await this.db.collection("messages").doc(`${userId}`).collection('allMessages').doc(`${messageId}`).update({
+      await this.db.collection("messages").doc(`${id}`).collection('allMessages').doc(`${messageId}`).update({
         role:data.role,
         message:data.message,
         createAt:data.createAt,
@@ -150,9 +180,9 @@ export class FilebaseService {
 
 
 
-  async updateUserContact(data:UserData, userId:string | number){
+  async updateUserContact(data:UserData, id:string){
     try {
-      await this.db.collection(`users`).doc(`${userId}`).update({
+      await this.db.collection(`users`).doc(`${id}`).update({
         email:data.email,
         phone:data.phone,
         privateNote:data.privateNote,
@@ -163,7 +193,7 @@ export class FilebaseService {
         userName:data.userName,
         createAt:data.createAt
       })
-      const updateData = await this.findOneUser(userId)
+      const updateData = await this.findOneUser(id)
       return {
         message:"success",
         updateData
@@ -178,21 +208,21 @@ export class FilebaseService {
 
 
 
-  async allMessagesDelete(userId:string | number){
+  async allMessagesDelete(id:string, userId:number | string){
     try {
-      const user = await this.findOneUser(userId)
-      const messages = (await this.db.collection('messages').doc(`${userId}`).collection('allMessages').get())
+      const user = await this.findOneUser(id)
+      const messages = (await this.db.collection('messages').doc(`${id}`).collection('allMessages').get())
       if (user?.service === 'telegram_bot') {
         for (let i = 0; i < messages.docs.length; i++) {
           const messageId = messages.docs[i].id as unknown as number
-          await this.botService.deleteMessage(messageId, userId as unknown as number)
+          await this.botService.deleteMessage(messageId, userId as unknown as number, id)
         }
         const batch = this.db.batch();
         messages.docs.forEach((doc) => {
           batch.delete(doc.ref);
         });
         await batch.commit();
-        await this.db.collection('messages').doc(`${userId}`).delete();
+        await this.db.collection('messages').doc(`${id}`).delete();
       }
     } catch (error) {
       throw new Error('error firebase allMessagesDelete function :' + error)
@@ -205,10 +235,10 @@ export class FilebaseService {
 
 
 
-  async deleteUserContact(userId:string|number){
+  async deleteUserContact(id:string, userId:string | number){
     try {
-      await this.allMessagesDelete(userId)
-      await this.db.collection('users').doc(`${userId}`).delete()
+      await this.allMessagesDelete(id, userId)
+      await this.db.collection('users').doc(`${id}`).delete()
       return {
         message:"user data and user allMessages deleted.",
       }
@@ -223,11 +253,11 @@ export class FilebaseService {
 
 
 
-  async deleteMessage(messageId:number | string, userId:number | string){
+  async deleteMessage(messageId:number | string, id: string, userId: number){
     try {
-      const user = await this.findOneUser(userId)
+      const user = await this.findOneUser(id)
       if(user?.role === 'bot'){
-        await this.botService.deleteMessage(messageId as number, userId as number)
+        await this.botService.deleteMessage(messageId as number, userId, id)
         await this.db.collection('messages').doc(`${userId}`).collection('allMessages').doc(`${messageId}`).delete()
       }
       return {
@@ -244,25 +274,24 @@ export class FilebaseService {
 
 
 
-  async uploadTelegramFileToFirebase(fileUrl: string, fileName: string): Promise<string> {
+  async uploadTelegramFileToFirebase(fileUrl: string, fileNameStorage: string, type?:string): Promise<string> {
     try {
       const response = await fetch.default(fileUrl);
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-
-      const fileUpload = this.storage.file(fileName);
+      const fileUpload = this.storage.file(fileNameStorage);
       await fileUpload.save(buffer, {
         metadata: {
-          contentType: 'application/octet-stream',
+          contentType : 'application/octet-stream'
         },
       });
 
       await fileUpload.makePublic();
 
-      const publicUrl = `https://storage.googleapis.com/${this.storage.name}/${fileName}`;
+      const publicUrl = `https://storage.googleapis.com/${this.storage.name}/${fileNameStorage}`;
       return publicUrl;
     } catch (error) {
-      throw new Error("error Firebase Storage function :", error);
+      throw new Error("error Firebase Storage function :" + error);
     }
   }
 
@@ -273,9 +302,9 @@ export class FilebaseService {
 
 
   
-  async uploadBufferToFirebase(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
+  async uploadBufferToFirebase(buffer: Buffer, fileNameStorage: string, contentType: string): Promise<string> {
     try {
-      const fileUpload = this.storage.file(fileName);
+      const fileUpload = this.storage.file(fileNameStorage);
       await fileUpload.save(buffer, {
         metadata: {
           contentType: contentType,
@@ -284,7 +313,7 @@ export class FilebaseService {
   
       await fileUpload.makePublic();
   
-      const publicUrl = `https://storage.googleapis.com/${this.storage.name}/${fileName}`;
+      const publicUrl = `https://storage.googleapis.com/${this.storage.name}/${fileNameStorage}`;
       return publicUrl;
     } catch (error) {
       throw new Error("error Firebase Buffer Upload function :" + error);
